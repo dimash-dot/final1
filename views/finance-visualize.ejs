@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance Visualization</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<% include navbar.ejs %>
+<h1>Finance Data Visualization</h1>
+
+<form id="filters">
+    <label for="company">Choose a company:</label>
+    <select id="company" name="company">
+        <option value="IBM">IBM</option>
+        <option value="AAPL">Apple</option>
+        <option value="GOOGL">Google</option>
+        <option value="AMZN">Amazon</option>
+    </select>
+
+    <label for="period">Choose a period:</label>
+    <select id="period" name="period">
+        <option value="1d">1 Day</option>
+        <option value="1wk">1 Week</option>
+        <option value="1mo">1 Month</option>
+        <option value="6mo">6 Months</option>
+        <option value="1y">1 Year</option>
+        <option value="max">All Time</option>
+    </select>
+
+    <button type="submit">Get Data</button>
+</form>
+
+<canvas id="financeChart" width="400" height="200"></canvas>
+
+<script>
+    const ctx = document.getElementById('financeChart').getContext('2d');
+    const financeChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [], // Даты
+            datasets: [{
+                label: 'Stock Prices',
+                data: [], // Данные по ценам
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: false
+                }
+            }
+        }
+    });
+
+    // Функция для запроса данных по выбранной компании и периоду
+    function fetchData(company, period) {
+        fetch(`/api/finance/stock/${company}?period=${period}`)
+            .then(response => response.json())
+            .then(data => {
+                // Обработка данных в зависимости от структуры
+                const labels = data.data.map(entry => new Date(entry.timestamp).toLocaleDateString());
+                const prices = data.data.map(entry => entry.close);
+
+                financeChart.data.labels = labels;
+                financeChart.data.datasets[0].data = prices;
+                financeChart.update();
+            })
+            .catch(error => console.error('Error fetching finance data:', error));
+    }
+
+    // Обработчик отправки формы
+    document.getElementById('filters').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const company = document.getElementById('company').value;
+        const period = document.getElementById('period').value;
+        fetchData(company, period);
+    });
+
+    // Загрузка данных для выбранной компании и периода по умолчанию
+    fetchData('IBM', '1d');
+</script>
+</body>
+</html>

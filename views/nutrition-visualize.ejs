@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nutrition Visualization</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<h1>Nutrition Data Visualization</h1>
+
+<!-- Форма для выбора фрукта и характеристики -->
+<form id="nutritionForm">
+    <label for="fruit">Choose a fruit:</label>
+    <select id="fruit" name="fruit">
+        <option value="apple">Apple</option>
+        <option value="banana">Banana</option>
+        <option value="orange">Orange</option>
+        <option value="strawberry">Strawberry</option>
+    </select>
+
+    <label for="characteristic">Choose a characteristic:</label>
+    <select id="characteristic" name="characteristic">
+        <option value="calories">Calories</option>
+        <option value="protein">Protein</option>
+        <option value="fat">Fat</option>
+        <option value="sugars">Sugars</option>
+    </select>
+
+    <button type="submit">Get Data</button>
+</form>
+
+<canvas id="nutritionChart" width="400" height="200"></canvas>
+
+<script>
+    const ctx = document.getElementById('nutritionChart').getContext('2d');
+    const nutritionChart = new Chart(ctx, {
+        type: 'bar', // Тип графика: колонны
+        data: {
+            labels: [], // Названия продуктов
+            datasets: [{
+                label: 'Nutrition Data',
+                data: [], // Данные по выбранной характеристике
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Обработчик отправки формы
+    document.getElementById('nutritionForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const fruit = document.getElementById('fruit').value;
+        const characteristic = document.getElementById('characteristic').value;
+
+        // Запрос данных для выбранного фрукта и характеристики
+        fetch('/api/nutrition/fruit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                fruit: fruit, // Выбранный фрукт
+                characteristics: [characteristic] // Массив с выбранной характеристикой
+            })
+        })
+            .then(response => response.json())
+            .then(data => {
+                const fruitData = data; // Данные для выбранного фрукта
+                const label = fruitData.name;
+                const nutritionValue = fruitData[characteristic]; // Получаем нужную характеристику
+
+                nutritionChart.data.labels = [label];
+                nutritionChart.data.datasets[0].data = [nutritionValue];
+                nutritionChart.update(); // Обновляем график
+            })
+            .catch(error => console.error('Error fetching nutrition data:', error));
+    });
+</script>
+</body>
+</html>
